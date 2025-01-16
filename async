@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="16dp">
+
+    <!-- Banner TextView -->
+    <TextView
+        android:id="@+id/bannerText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Demonstration of Asynchronous Task"
+        android:textSize="20sp"
+        android:textColor="#FF0000"
+        android:visibility="gone" />
+
+    <!-- Start Button -->
+    <Button
+        android:id="@+id/startButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start" />
+
+    <!-- Stop Task Button -->
+    <Button
+        android:id="@+id/stopButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Stop Task"
+        android:enabled="false" />
+
+</LinearLayout>
+
+
+
+
+package com.example.movingbanner;
+
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
+
+    private TextView bannerText;
+    private Button startButton, stopButton;
+    private BannerAsyncTask bannerAsyncTask;
+    
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        bannerText = findViewById(R.id.bannerText);
+        startButton = findViewById(R.id.startButton);
+        stopButton = findViewById(R.id.stopButton);
+
+        // Start Button click listener
+        startButton.setOnClickListener(v -> {
+            // Show the banner text and start the async task
+            bannerText.setVisibility(View.VISIBLE);
+            bannerAsyncTask = new BannerAsyncTask();
+            bannerAsyncTask.execute();
+            
+            // Disable the Start button and enable the Stop button
+            startButton.setEnabled(false);
+            stopButton.setEnabled(true);
+        });
+
+        // Stop Button click listener
+        stopButton.setOnClickListener(v -> {
+            if (bannerAsyncTask != null) {
+                bannerAsyncTask.cancel(true); // Stop the async task
+            }
+
+            // Disable the Stop button and enable the Start button
+            startButton.setEnabled(true);
+            stopButton.setEnabled(false);
+        });
+    }
+
+    // AsyncTask to perform the scrolling of the banner message
+    private class BannerAsyncTask extends AsyncTask<Void, Integer, Void> {
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            // Loop to simulate the scrolling of the banner
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int messageWidth = bannerText.getWidth();
+            int initialPosition = screenWidth;
+
+            while (!isCancelled()) {
+                // Update the position of the textView to simulate movement
+                publishProgress(initialPosition);
+                initialPosition--;
+
+                // Wait for a short time to create the animation effect
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                // Reset position when the banner message goes off screen
+                if (initialPosition < -messageWidth) {
+                    initialPosition = screenWidth;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            // Update the position of the TextView to move it from right to left
+            bannerText.setTranslationX(values[0]);
+        }
+
+        @Override
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
+            // Enable the Start button after the task completes
+            startButton.setEnabled(true);
+            stopButton.setEnabled(false);
+        }
+    }
+}
