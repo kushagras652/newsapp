@@ -1,0 +1,76 @@
+package com.example.wallpaperchanger;
+
+import android.app.WallpaperManager;
+import android.os.Bundle;
+import android.os.Handler;
+import android.view.View;
+import android.widget.Button;
+
+import androidx.appcompat.app.AppCompatActivity;
+
+import java.io.IOException;
+import java.util.Random;
+
+public class MainActivity extends AppCompatActivity {
+    private int[] imageResources = {
+            R.drawable.wallpaper1,
+            R.drawable.wallpaper2,
+            R.drawable.wallpaper3,
+            R.drawable.wallpaper4,
+            R.drawable.wallpaper5
+    };
+
+    private Handler handler = new Handler();
+    private Runnable wallpaperChanger;
+    private boolean isRunning = false;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        Button startButton = findViewById(R.id.startButton);
+
+        startButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!isRunning) {
+                    isRunning = true;
+                    startWallpaperChanger();
+                }
+            }
+        });
+    }
+
+    private void startWallpaperChanger() {
+        wallpaperChanger = new Runnable() {
+            @Override
+            public void run() {
+                changeWallpaper();
+                if (isRunning) {
+                    handler.postDelayed(this, 30000); // Change wallpaper every 30 seconds
+                }
+            }
+        };
+
+        handler.post(wallpaperChanger);
+    }
+
+    private void changeWallpaper() {
+        WallpaperManager wallpaperManager = WallpaperManager.getInstance(this);
+        Random random = new Random();
+        int randomIndex = random.nextInt(imageResources.length);
+        try {
+            wallpaperManager.setResource(imageResources[randomIndex]);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        isRunning = false; // Stop changing wallpaper when activity is destroyed
+        handler.removeCallbacks(wallpaperChanger);
+    }
+}
